@@ -1,0 +1,27 @@
+{
+  "sales_path": "data/raw/Volume Data_prueba_CD.xlsx",
+  "macro_path": "data/raw/Macro Variables_Prueba_CD.xlsx",
+  "date_column": "date",
+  "target": "Log_Volume",
+  "test_months": 12,
+  "feature_set": "moving_average",
+  "features": [
+    "Volume_MA_3",
+    "DN_lag_1",
+    "Avg_Price_lag_1",
+    "IPC_lag_1",
+    "Is_December",
+    "Low_Season"
+  ],
+  "model": {
+    "name": "Ridge",
+    "params": {
+      "alpha": 10.0
+    }
+  },
+  "artifacts": {
+    "model_path": "models/best_model.joblib",
+    "metadata_path": "models/model_metadata.json"
+  },
+  "prediction_output": "outputs/predictions.csv"
+}
