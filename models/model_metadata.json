@@ -1,0 +1,44 @@
+{
+  "model_key": "moving_average__Ridge",
+  "model_name": "Ridge",
+  "feature_set": "moving_average",
+  "target": "Log_Volume",
+  "prediction_scale": "Volume",
+  "features": [
+    "Volume_MA_3",
+    "DN_lag_1",
+    "Avg_Price_lag_1",
+    "IPC_lag_1",
+    "Is_December",
+    "Low_Season"
+  ],
+  "best_params": {
+    "model__alpha": 10.0
+  },
+  "holdout": {
+    "n_train": 21,
+    "n_test": 12
+  },
+  "holdout_metrics": {
+    "wape": 0.12859263,
+    "bias": 0.06560567,
+    "mae": 17219.186671,
+    "rmse": 21097.135172
+  },
+  "feature_definitions": {
+    "Volume_MA_3": "Promedio de Volume de los tres meses anteriores al mes pronosticado.",
+    "DN_lag_1": "DN observado en el mes anterior.",
+    "Avg_Price_lag_1": "NR / Volume del mes anterior.",
+    "IPC_lag_1": "IPC mensual disponible del mes anterior.",
+    "Is_December": "1 si el mes pronosticado es diciembre; 0 en caso contrario.",
+    "Low_Season": "1 si el mes pronosticado corresponde a julio, octubre o noviembre."
+  },
+  "library_versions": {
+    "python": "3.10.11",
+    "pandas": "2.3.3",
+    "numpy": "2.2.6",
+    "scikit_learn": "1.7.2",
+    "joblib": "1.6.0"
+  },
+  "saved_at_utc": "2026-10-10T20:43:45.048189+00:00"
+}
