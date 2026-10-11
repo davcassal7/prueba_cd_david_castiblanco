@@ -1,0 +1,10 @@
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+.DS_Store
+# Source data can be excluded if repository is public
+# data/raw/*.xlsx
+# Keep final technical-test artifacts
