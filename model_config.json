@@ -1,0 +1,32 @@
+{
+  "sales_path": "data/raw/Volume Data_prueba_CD.xlsx",
+  "sales_sheet": "Marca",
+  "macro_path": "data/raw/Macro Variables_Prueba_CD.xlsx",
+  "brand": "Marca 2",
+  "target": "Log_Volume",
+  "test_months": 12,
+  "max_abs_bias": 0.07,
+  "feature_set": "moving_average_trend",
+  "features": [
+    "Volume_MA_3",
+    "DN_lag_1",
+    "Avg_Price_lag_1",
+    "Trend",
+    "Is_December",
+    "Low_Season"
+  ],
+  "model": {
+    "name": "ElasticNet",
+    "params": {
+      "alpha": 0.01,
+      "l1_ratio": 0.75,
+      "max_iter": 20000,
+      "random_state": 42
+    }
+  },
+  "artifacts": {
+    "model_path": "models/best_model.joblib",
+    "metadata_path": "models/model_metadata.json"
+  },
+  "prediction_output": "outputs/next_month_prediction.csv"
+}
