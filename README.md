@@ -35,6 +35,7 @@ Variables productivas:
 - `scripts/forecast_next_month.py`: forecast de un paso.
 - `models/`: pipeline final y metadata.
 - `outputs/`: ranking, predicciones y coeficientes.
+- `presentacion/`: presentacion ejecutiva.
 - `tests/`: pruebas unitarias.
 
 ## Ejecución
