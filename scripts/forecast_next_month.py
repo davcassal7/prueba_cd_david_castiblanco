@@ -9,22 +9,25 @@ from volume_forecasting.prediction import VolumePredictor
 from volume_forecasting.scoring import OneStepScoringBuilder
 
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--forecast-date", required=True, help="First day or any date in next month")
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Forecast Marca 2 volume one month ahead.")
+    parser.add_argument("--forecast-date", required=True)
     parser.add_argument("--output", default="outputs/next_month_prediction.csv")
-    parser.add_argument("--ipc-lag-1", type=float, default=None,
-                        help="Latest CPI known at forecast date; defaults to latest CPI in source")
     args = parser.parse_args()
+
     config = ConfigLoader.load("config/model_config.json")
-    sales, macro = DataLoader().load_sources(config["sales_path"], config["macro_path"])
-    engineered = FeatureEngineer().build(sales, macro)
-    row = OneStepScoringBuilder().build(engineered, args.forecast_date, args.ipc_lag_1)
-    model, metadata = ArtifactStore.load(config["artifacts"]["model_path"],
-                                         config["artifacts"]["metadata_path"])
-    prediction = VolumePredictor(model, metadata["features"]).predict(row)
-    Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-    prediction.to_csv(args.output, index=False)
+    sales, macro = DataLoader().load_sources(
+        config["sales_path"], config["macro_path"], config.get("sales_sheet", "Marca")
+    )
+    engineered = FeatureEngineer(brand=config["brand"]).build(sales, macro)
+    scoring_row = OneStepScoringBuilder().build(engineered, args.forecast_date)
+    model, metadata = ArtifactStore.load(
+        config["artifacts"]["model_path"], config["artifacts"]["metadata_path"]
+    )
+    prediction = VolumePredictor(model, metadata["features"]).predict(scoring_row)
+    output_path = Path(args.output)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    prediction.to_csv(output_path, index=False, encoding="utf-8-sig")
     print(prediction.to_string(index=False))
 
 
