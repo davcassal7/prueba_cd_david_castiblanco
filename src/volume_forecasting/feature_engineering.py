@@ -5,32 +5,41 @@ import pandas as pd
 
 
 class FeatureEngineer:
-    """Builds leakage-safe monthly features for volume forecasting."""
+    """Select the target brand and create leakage-safe monthly features."""
 
-    REQUIRED_SALES = {"Año", "Mes", "Volume", "NR", "DN"}
+    REQUIRED_SALES = {"Año", "Mes", "Marca", "Volume", "NR", "DN"}
     REQUIRED_MACRO = {"date", "concept", "frequency", "value"}
 
-    def __init__(self, low_season_months: tuple[int, ...] = (7, 10, 11)) -> None:
+    def __init__(self, brand: str = "Marca 2", low_season_months: tuple[int, ...] = (7, 10, 11)) -> None:
+        self.brand = brand
         self.low_season_months = low_season_months
 
     @staticmethod
-    def _validate_columns(data: pd.DataFrame, required: set[str], name: str) -> None:
+    def _validate_columns(data: pd.DataFrame, required: set[str], source: str) -> None:
         missing = required.difference(data.columns)
         if missing:
-            raise ValueError(f"{name} is missing columns: {sorted(missing)}")
+            raise ValueError(f"{source} is missing columns: {sorted(missing)}")
+
+    def select_brand(self, sales: pd.DataFrame) -> pd.DataFrame:
+        self._validate_columns(sales, self.REQUIRED_SALES, "sales")
+        selected = sales.loc[sales["Marca"].eq(self.brand)].copy()
+        if selected.empty:
+            raise ValueError(f"No observations found for {self.brand}.")
+        if not selected["Marca"].eq(self.brand).all():
+            raise ValueError("Brand filtering failed.")
+        return selected
 
     @staticmethod
-    def _validate_monthly_dates(data: pd.DataFrame, date_column: str = "date") -> None:
-        if data[date_column].duplicated().any():
+    def _validate_monthly_dates(data: pd.DataFrame) -> None:
+        if data["date"].duplicated().any():
             raise ValueError("Duplicate monthly dates were found.")
-        expected = pd.date_range(data[date_column].min(), data[date_column].max(), freq="MS")
-        missing = expected.difference(data[date_column])
+        expected = pd.date_range(data["date"].min(), data["date"].max(), freq="MS")
+        missing = expected.difference(data["date"])
         if len(missing):
             raise ValueError(f"Missing monthly dates: {missing.tolist()}")
 
     def transform_sales(self, sales: pd.DataFrame) -> pd.DataFrame:
-        self._validate_columns(sales, self.REQUIRED_SALES, "sales")
-        data = sales.copy()
+        data = self.select_brand(sales)
         data["date"] = pd.to_datetime(dict(year=data["Año"], month=data["Mes"], day=1))
         data = data.sort_values("date").reset_index(drop=True)
         self._validate_monthly_dates(data)
@@ -41,6 +50,8 @@ class FeatureEngineer:
         data["DN_lag_1"] = data["DN"].shift(1)
         data["Avg_Price"] = data["NR"].div(data["Volume"].replace(0, np.nan))
         data["Avg_Price_lag_1"] = data["Avg_Price"].shift(1)
+        data["Trend"] = np.arange(len(data), dtype=float)
+        data["Is_February"] = data["date"].dt.month.eq(2).astype(int)
         data["Is_December"] = data["date"].dt.month.eq(12).astype(int)
         data["Low_Season"] = data["date"].dt.month.isin(self.low_season_months).astype(int)
         data["Log_Volume"] = np.log1p(data["Volume"])
@@ -55,11 +66,14 @@ class FeatureEngineer:
         cpi["date"] = pd.to_datetime(cpi["date"]).dt.to_period("M").dt.to_timestamp()
         cpi = cpi.rename(columns={"value": "IPC"}).sort_values("date").reset_index(drop=True)
         if cpi["date"].duplicated().any():
-            raise ValueError("Multiple monthly CPI values were found for one date.")
+            raise ValueError("Multiple monthly CPI observations were found for one date.")
         cpi["IPC_lag_1"] = cpi["IPC"].shift(1)
         return cpi[["date", "IPC_lag_1"]]
 
     def build(self, sales: pd.DataFrame, macro: pd.DataFrame) -> pd.DataFrame:
         sales_features = self.transform_sales(sales)
         cpi_features = self.transform_cpi(macro)
-        return sales_features.merge(cpi_features, on="date", how="left", validate="one_to_one")
+        result = sales_features.merge(cpi_features, on="date", how="left", validate="one_to_one")
+        if not result["Marca"].eq(self.brand).all():
+            raise ValueError("The final modeling table contains another brand.")
+        return result

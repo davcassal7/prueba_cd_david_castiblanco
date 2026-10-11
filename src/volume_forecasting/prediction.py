@@ -5,7 +5,7 @@ import pandas as pd
 
 
 class VolumePredictor:
-    """Generates volume predictions from a fitted sklearn pipeline."""
+    """Generate volume predictions using a fitted log-target pipeline."""
 
     def __init__(self, model, features: list[str]) -> None:
         self.model = model
