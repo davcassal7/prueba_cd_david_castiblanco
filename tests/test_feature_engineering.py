@@ -1,15 +1,23 @@
+import numpy as np
 import pandas as pd
 from volume_forecasting.feature_engineering import FeatureEngineer
 
 
-def test_sales_features_are_lagged():
-    sales = pd.DataFrame({
-        "Año": [2023, 2023, 2023, 2023],
-        "Mes": [1, 2, 3, 4],
-        "Volume": [100.0, 110.0, 120.0, 130.0],
-        "NR": [1000.0, 1210.0, 1440.0, 1690.0],
-        "DN": [10.0, 11.0, 12.0, 13.0],
-    })
-    result = FeatureEngineer().transform_sales(sales)
-    assert result.loc[1, "Volume_lag_1"] == 100.0
-    assert result.loc[3, "Volume_MA_3"] == 110.0
+def sample_sales():
+    rows = []
+    for brand, factor in [("Marca 1", 1.0), ("Marca 2", 2.0)]:
+        for month in range(1, 5):
+            rows.append({"Año": 2023, "Mes": month, "Marca": brand,
+                         "Volume": 100.0 * month * factor,
+                         "NR": 10000.0 * month * factor,
+                         "DN": 10 * month})
+    return pd.DataFrame(rows)
+
+
+def test_selects_only_marca_2_and_builds_features():
+    result = FeatureEngineer(brand="Marca 2").transform_sales(sample_sales())
+    assert result["Marca"].eq("Marca 2").all()
+    assert result.loc[1, "Volume_lag_1"] == 200.0
+    assert result.loc[3, "Volume_MA_3"] == 400.0
+    assert result.loc[3, "Trend"] == 3.0
+    assert "Is_February" in result.columns
